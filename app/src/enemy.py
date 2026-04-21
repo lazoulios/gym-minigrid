@@ -47,4 +47,4 @@ if __name__ == "__main__":
     
     plt.imshow(img)
     plt.axis('off') 
-    plt.savefig('app/data/enemy_render.png', bbox_inches='tight')
+    plt.savefig('app/data/media/enemy_render.png', bbox_inches='tight')

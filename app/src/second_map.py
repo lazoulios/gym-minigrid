@@ -18,13 +18,13 @@ from minigrid.core.mission import MissionSpace
 from app.src.enemy import RimWorldEnemy
 import time
 
-class First(MiniGridEnv):
+class Second(MiniGridEnv):
     def __init__(
         self,
         size=16,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        max_steps= 500,
+        max_steps: int | None = None,
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
@@ -47,25 +47,24 @@ class First(MiniGridEnv):
     def _gen_grid(self, width, height):
         self.grid = Grid(width, height)
         self.grid.wall_rect(0, 0, width, height)
-        self.put_obj(Goal(), width - 2, height - 2)
+        self.put_obj(Goal(), width - 8, height - 8)
 
-        for i in range(0, height):
-            self.grid.set(5, i, Wall())
+        for i in range(3, height-3):
+            self.grid.set(3, i, Wall())
+        for i in range(3, height-3):
+            self.grid.set(12, i, Wall())
+        for i in range(3, height-3):
+            self.grid.set(i, 3, Wall())
+        for i in range(3, height-3):
+            self.grid.set(i, 12, Wall())
+        for i in range(3, height-3):
+            self.grid.set(9, i, Wall())
 
-        self.grid.set(5, 7, Door(COLOR_NAMES[0], is_locked=True))
-        self.grid.set(3, 14, Key(COLOR_NAMES[0]))
-
-        self.grid.set(12, 12, Lava())
-        self.grid.set(12, 11, Lava())
-        self.grid.set(11, 12, Lava())
-        self.grid.set(11, 11, Lava())
-        self.grid.set(10, 12, Lava())
-        self.grid.set(10, 13, Lava())
-        self.grid.set(11, 13, Lava())
-
-        enemy = RimWorldEnemy()
-        self.grid.set(10, 6, enemy)
-        self.grid.set(11, 7, enemy)
+        self.grid.set(12, 7, Door(COLOR_NAMES[0], is_locked=True))
+        self.grid.set(2, 11, Key(COLOR_NAMES[0]))
+    
+        self.grid.set(3, 7, Door(COLOR_NAMES[4], is_locked=True))
+        self.grid.set(10, 5, Key(COLOR_NAMES[4]))
 
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
@@ -73,22 +72,8 @@ class First(MiniGridEnv):
         else:
             self.place_agent()
 
-    def step(self, action):
-        obs, reward, terminated, truncated, info = super().step(action)
-
-        #enemy interaction
-        agent_cell = self.grid.get(*self.agent_pos)
-        if isinstance(agent_cell, RimWorldEnemy):
-            reward -= 10
-            terminated = True
-
-        if not terminated and not truncated:
-            reward -= 0.01
-        
-        return obs, reward, terminated, truncated, info
-
 if __name__ == "__main__":
-    env = First(size=16,render_mode="human")
+    env = Second(size=16,render_mode="human")
     env = ImgObsWrapper(env)
 
     obs, info = env.reset()
