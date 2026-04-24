@@ -18,6 +18,9 @@ class RimWorldEnemy(WorldObj):
     def __init__(self, color='red'):
         super().__init__('ball', color)
 
+    def can_overlap(self):
+        return True
+
     def render(self, img):
         body_poly = point_in_ellipse(0.5, 0.7, 0.35, 0.25)
         fill_coords(img, body_poly, (200, 180, 150)) 

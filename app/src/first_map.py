@@ -24,7 +24,7 @@ class First(MiniGridEnv):
         size=16,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        max_steps= 500,
+        max_steps=500, 
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
@@ -35,9 +35,76 @@ class First(MiniGridEnv):
         super().__init__(
             mission_space=mission_space,
             grid_size=size,
-            max_steps=256,
+            max_steps=max_steps, 
+            agent_view_size=11,
             **kwargs,
         )
+
+    def reset(self, **kwargs):
+        print("Resetting environment...")
+        obs, info = super().reset(**kwargs)
+        
+        self.key_pos = (3, 14)
+        self.door_pos = (5, 7)
+        self.goal_pos = (self.width - 2, self.height - 2)
+        
+        self.current_phase = 1
+
+        self.min_distance = abs(self.agent_pos[0] - self.key_pos[0]) + abs(self.agent_pos[1] - self.key_pos[1])
+        
+        self.rewarded_for_key = False 
+        self.rewarded_for_door = False
+        
+        return obs, info
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = super().step(action)
+
+        if action == self.actions.done:
+            reward -= 15.0 
+            terminated = True
+            print("Agent gave up. -15.0 Reward")
+
+        current_cell = self.grid.get(*self.agent_pos)
+        if current_cell is not None:
+            if current_cell.type == 'lava' or isinstance(current_cell, RimWorldEnemy):
+                reward -= 10.0  
+                terminated = True 
+                print('Agent died. -10.0 Reward')
+
+        if not terminated and not truncated:
+            reward -= 0.005
+
+        if self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_key:
+            reward += 0.5
+            self.rewarded_for_key = True
+            self.current_phase = 2 
+            self.min_distance = abs(self.agent_pos[0] - self.door_pos[0]) + abs(self.agent_pos[1] - self.door_pos[1])
+            print('Key picked up. +0.5 Reward')
+
+        if action == self.actions.toggle:
+            front_cell = self.grid.get(*self.front_pos)
+            if front_cell is not None and front_cell.type == 'door' and front_cell.is_open and not self.rewarded_for_door:
+                reward += 0.5
+                self.rewarded_for_door = True
+                self.current_phase = 3
+                self.min_distance = abs(self.agent_pos[0] - self.goal_pos[0]) + abs(self.agent_pos[1] - self.goal_pos[1])
+                print('Door opened. +0.5 Reward')
+
+        if self.current_phase == 1:
+            target = self.key_pos
+        elif self.current_phase == 2:
+            target = self.door_pos
+        else:
+            target = self.goal_pos
+
+        current_distance = abs(self.agent_pos[0] - target[0]) + abs(self.agent_pos[1] - target[1])
+        
+        if current_distance < self.min_distance:
+            reward += 0.05
+            self.min_distance = current_distance
+
+        return obs, reward, terminated, truncated, info
 
     @staticmethod
     def _gen_mission():
@@ -72,20 +139,6 @@ class First(MiniGridEnv):
             self.agent_dir = self.agent_start_dir
         else:
             self.place_agent()
-
-    def step(self, action):
-        obs, reward, terminated, truncated, info = super().step(action)
-
-        #enemy interaction
-        agent_cell = self.grid.get(*self.agent_pos)
-        if isinstance(agent_cell, RimWorldEnemy):
-            reward -= 10
-            terminated = True
-
-        if not terminated and not truncated:
-            reward -= 0.01
-        
-        return obs, reward, terminated, truncated, info
 
 if __name__ == "__main__":
     env = First(size=16,render_mode="human")

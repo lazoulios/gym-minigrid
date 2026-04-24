@@ -24,7 +24,7 @@ class Third(MiniGridEnv):
         size=16,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
-        max_steps: int | None = None,
+        max_steps=500, 
         **kwargs,
     ):
         self.agent_start_pos = agent_start_pos
@@ -35,9 +35,52 @@ class Third(MiniGridEnv):
         super().__init__(
             mission_space=mission_space,
             grid_size=size,
-            max_steps=256,
+            max_steps=max_steps, 
+            agent_view_size=11,
             **kwargs,
         )
+
+    def reset(self, **kwargs):
+        print("Resetting environment...")
+        obs, info = super().reset(**kwargs)
+        self.visited_cells = set()
+        self.visited_cells.add(tuple(self.agent_pos))
+        self.rewarded_for_key = False 
+        self.rewarded_for_door = False
+        
+        return obs, info
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = super().step(action)
+
+        current_cell = self.grid.get(*self.agent_pos)
+        if current_cell is not None:
+            if current_cell.type == 'lava':
+                reward -= 10.0  
+                terminated = True 
+                print('Agent died. -10.0 Reward')
+
+        if not terminated and not truncated:
+            reward -= 0.005
+
+        if self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_key:
+            reward += 0.5
+            self.rewarded_for_key = True
+            print('Key picked up. +0.5 Reward')
+
+        if action == self.actions.toggle:
+            front_cell = self.grid.get(*self.front_pos)
+            if front_cell is not None and front_cell.type == 'door' and front_cell.is_open and not self.rewarded_for_door:
+                reward += 0.5
+                self.rewarded_for_door = True
+                print('Door opened. +0.5 Reward')
+
+        current_pos_tuple = tuple(self.agent_pos)
+        if current_pos_tuple not in self.visited_cells:
+            reward += 0.005
+            self.visited_cells.add(current_pos_tuple)
+
+        return obs, reward, terminated, truncated, info
 
     @staticmethod
     def _gen_mission():

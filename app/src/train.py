@@ -74,13 +74,13 @@ if __name__ == "__main__":
             policy_kwargs=policy_kwargs,
             verbose=1, 
             learning_rate=0.0003,
-            tensorboard_log=f"app/data/runs/tensorboard_500_{map_name}/"
+            tensorboard_log=f"app/data/runs/tensorboard_50_{map_name}/"
         )
 
         print(f"\nTraining {map_name}")
-        model.learn(total_timesteps=500000)
+        model.learn(total_timesteps=200000)
 
-        save_path = f"app/data/model/ppo_agent_500_{map_name}"
+        save_path = f"app/data/model/ppo_agent_50_{map_name}"
         model.save(save_path)
         
         print(f"\nFinished. Saved as '{save_path}.zip'")
