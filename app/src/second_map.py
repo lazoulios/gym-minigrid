@@ -1,10 +1,9 @@
 import sys
 import os
+import time
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
 project_root = os.path.abspath(os.path.join(current_dir, "../../"))
-
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -16,7 +15,14 @@ from minigrid.core.world_object import Goal, Wall, Lava, Door, Key
 from minigrid.wrappers import ImgObsWrapper
 from minigrid.core.mission import MissionSpace
 from app.src.enemy import RimWorldEnemy
-import time
+
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    CYAN = '\033[96m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
 
 class Second(MiniGridEnv):
     def __init__(
@@ -41,44 +47,112 @@ class Second(MiniGridEnv):
         )
 
     def reset(self, **kwargs):
-        print("Resetting environment...")
+        print(f"\n{Colors.BLUE}Resetting Map 2...{Colors.RESET}")
         obs, info = super().reset(**kwargs)
-        self.visited_cells = set()
-        self.visited_cells.add(tuple(self.agent_pos))
-        self.rewarded_for_key = False 
-        self.rewarded_for_door = False
+        
+        self.key1_pos = (2, 11)   
+        self.door1_pos = (12, 7)  
+        self.key2_pos = (10, 5)   
+        self.door2_pos = (3, 7)   
+        self.goal_pos = (self.width - 8, self.height - 8)
+        
+        self.current_phase = 1
+
+        self.rewarded_for_key1 = False 
+        self.rewarded_for_door1 = False
+        self.rewarded_for_key2 = False 
+        self.rewarded_for_door2 = False
+        
+        self.min_distance = float('inf')
         
         return obs, info
 
     def step(self, action):
         obs, reward, terminated, truncated, info = super().step(action)
 
+        if action == self.actions.done:
+            terminated = False 
+
         current_cell = self.grid.get(*self.agent_pos)
         if current_cell is not None:
-            if current_cell.type == 'lava' or isinstance(current_cell, RimWorldEnemy):
-                reward -= 10.0 
-                terminated = True 
-                print('Agent died. -10.0 Reward')
-
+            if current_cell.type == 'goal':
+                reward += 5.0  
+                terminated = True
+                print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
+            
         if not terminated and not truncated:
             reward -= 0.005
 
-        if self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_key:
-            reward += 0.5
-            self.rewarded_for_key = True
-            print('Key picked up. +0.5 Reward')
+        front_cell = self.grid.get(*self.front_pos)
+        if front_cell is not None:
+            if front_cell.type == 'key':
+                if self.current_phase == 1 and front_cell.color == COLOR_NAMES[0]:
+                    reward += 0.005
+                elif self.current_phase == 3 and front_cell.color == COLOR_NAMES[4]:
+                    reward += 0.005
+            elif front_cell.type == 'door' and not front_cell.is_open:
+                if self.current_phase == 2 and front_cell.color == COLOR_NAMES[0]:
+                    reward += 0.005
+                elif self.current_phase == 4 and front_cell.color == COLOR_NAMES[4]:
+                    reward += 0.005
 
-        if action == self.actions.toggle:
-            front_cell = self.grid.get(*self.front_pos)
-            if front_cell is not None and front_cell.type == 'door' and front_cell.is_open and not self.rewarded_for_door:
+        if action == self.actions.drop and self.carrying is not None and self.carrying.type == 'key':
+            if self.current_phase in [2, 4]:    
+                reward -= 2.0
+                terminated = True
+                print(f"\n{Colors.RED}Agent dropped the key. -2.0 Reward{Colors.RESET}")
+
+        if self.carrying and self.carrying.type == 'key' and self.carrying.color == COLOR_NAMES[0]:
+            if self.current_phase == 1:
+                self.current_phase = 2 
+                self.min_distance = float('inf')
                 reward += 0.5
-                self.rewarded_for_door = True
-                print('Door opened. +0.5 Reward')
+                self.rewarded_for_key1 = True
+                print(f'\n{Colors.GREEN}Key 1 picked up. +0.5 Reward{Colors.RESET}')
 
-        current_pos_tuple = tuple(self.agent_pos)
-        if current_pos_tuple not in self.visited_cells:
-            reward += 0.02 
-            self.visited_cells.add(current_pos_tuple)
+        if action == self.actions.toggle and front_cell and front_cell.type == 'door' and front_cell.color == COLOR_NAMES[0] and front_cell.is_open:
+            if self.current_phase == 2:
+                self.current_phase = 3
+                self.min_distance = float('inf')
+                reward += 1.0
+                self.rewarded_for_door1 = True
+                print(f'\n{Colors.GREEN}Door 1 opened. +1.0 Reward{Colors.RESET}')
+
+        if self.carrying and self.carrying.type == 'key' and self.carrying.color == COLOR_NAMES[4]:
+            if self.current_phase == 3:
+                self.current_phase = 4 
+                self.min_distance = float('inf')
+                reward += 0.5
+                self.rewarded_for_key2 = True
+                print(f'\n{Colors.GREEN}Key 2 picked up. +0.5 Reward{Colors.RESET}')
+
+        # ΦΑΣΗ 4 -> 5: Ανοίγει την Πόρτα 2
+        if action == self.actions.toggle and front_cell and front_cell.type == 'door' and front_cell.color == COLOR_NAMES[4] and front_cell.is_open:
+            if self.current_phase == 4:
+                self.current_phase = 5
+                self.min_distance = float('inf')
+                reward += 1.0
+                self.rewarded_for_door2 = True
+                print(f'\n{Colors.GREEN}Door 2 opened. +1.0 Reward{Colors.RESET}')
+
+        if self.current_phase == 1:
+            target = self.key1_pos
+        elif self.current_phase == 2:
+            target = self.door1_pos
+        elif self.current_phase == 3:
+            target = self.key2_pos
+        elif self.current_phase == 4:
+            target = self.door2_pos
+        else:
+            target = self.goal_pos
+
+        current_distance = abs(self.agent_pos[0] - target[0]) + abs(self.agent_pos[1] - target[1])
+        
+        if current_distance < self.min_distance:
+            reward += 0.1
+            self.min_distance = current_distance
+
+        print(f"\rPhase: {self.current_phase} | Target Distance: {current_distance:<2}    ", end="", flush=True)
 
         return obs, reward, terminated, truncated, info
 
@@ -120,7 +194,6 @@ if __name__ == "__main__":
     env = ImgObsWrapper(env)
 
     obs, info = env.reset()
-    #print(obs.shape)
 
     try:
         for _ in range(500):
@@ -134,4 +207,3 @@ if __name__ == "__main__":
                 obs, _ = env.reset()
     finally:
         env.close()
-

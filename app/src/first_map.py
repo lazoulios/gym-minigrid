@@ -18,6 +18,14 @@ from minigrid.core.mission import MissionSpace
 from app.src.enemy import RimWorldEnemy
 import time
 
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    CYAN = '\033[96m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
+
 class First(MiniGridEnv):
     def __init__(
         self,
@@ -41,7 +49,7 @@ class First(MiniGridEnv):
         )
 
     def reset(self, **kwargs):
-        print("Resetting environment...")
+        print(f"\n{Colors.BLUE}Resetting environment...{Colors.RESET}")
         obs, info = super().reset(**kwargs)
         
         self.key_pos = (3, 14)
@@ -50,10 +58,12 @@ class First(MiniGridEnv):
         
         self.current_phase = 1
 
-        self.min_distance = abs(self.agent_pos[0] - self.key_pos[0]) + abs(self.agent_pos[1] - self.key_pos[1])
+        self.prev_distance = abs(self.agent_pos[0] - self.key_pos[0]) + abs(self.agent_pos[1] - self.key_pos[1])
         
         self.rewarded_for_key = False 
         self.rewarded_for_door = False
+
+        self.min_phase3_distance = float('inf')
         
         return obs, info
 
@@ -61,35 +71,45 @@ class First(MiniGridEnv):
         obs, reward, terminated, truncated, info = super().step(action)
 
         if action == self.actions.done:
-            reward -= 15.0 
-            terminated = True
-            print("Agent gave up. -15.0 Reward")
+            terminated = False 
 
         current_cell = self.grid.get(*self.agent_pos)
         if current_cell is not None:
             if current_cell.type == 'lava' or isinstance(current_cell, RimWorldEnemy):
-                reward -= 10.0  
+                reward -= 5.0  
                 terminated = True 
-                print('Agent died. -10.0 Reward')
+                print(f'\n{Colors.RED}Agent died. -5.0 Reward{Colors.RESET}')
+            elif current_cell.type == 'goal':
+                reward += 5.0  
+                terminated = True
+                print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
+
+        if action == self.actions.drop and self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_door and self.current_phase == 2:
+            reward -= 2.0
+            terminated = True
+            print(f"\n{Colors.RED}Agent dropped the item! -2.0 Reward{Colors.RESET}")
 
         if not terminated and not truncated:
             reward -= 0.005
+
+        front_cell = self.grid.get(*self.front_pos)
+        if self.current_phase == 2 and front_cell is not None and front_cell.type == 'door' and not front_cell.is_open:
+            reward += 0.005
 
         if self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_key:
             reward += 0.5
             self.rewarded_for_key = True
             self.current_phase = 2 
-            self.min_distance = abs(self.agent_pos[0] - self.door_pos[0]) + abs(self.agent_pos[1] - self.door_pos[1])
-            print('Key picked up. +0.5 Reward')
+            self.prev_distance = abs(self.agent_pos[0] - self.door_pos[0]) + abs(self.agent_pos[1] - self.door_pos[1])
+            print(f'\n{Colors.GREEN}Key picked up. +0.5 Reward{Colors.RESET}')
 
         if action == self.actions.toggle:
-            front_cell = self.grid.get(*self.front_pos)
             if front_cell is not None and front_cell.type == 'door' and front_cell.is_open and not self.rewarded_for_door:
-                reward += 0.5
+                reward += 1.0
                 self.rewarded_for_door = True
                 self.current_phase = 3
-                self.min_distance = abs(self.agent_pos[0] - self.goal_pos[0]) + abs(self.agent_pos[1] - self.goal_pos[1])
-                print('Door opened. +0.5 Reward')
+                print(f'\n{Colors.GREEN}Door opened. +1.0 Reward{Colors.RESET}')
+                self.min_phase3_distance = abs(self.agent_pos[0] - self.goal_pos[0]) + abs(self.agent_pos[1] - self.goal_pos[1])
 
         if self.current_phase == 1:
             target = self.key_pos
@@ -100,9 +120,20 @@ class First(MiniGridEnv):
 
         current_distance = abs(self.agent_pos[0] - target[0]) + abs(self.agent_pos[1] - target[1])
         
-        if current_distance < self.min_distance:
-            reward += 0.05
-            self.min_distance = current_distance
+        if self.current_phase in [1, 2]:
+            if current_distance < self.prev_distance:
+                reward += 0.1
+            elif current_distance > self.prev_distance:
+                reward -= 0.1 
+
+        elif self.current_phase == 3:
+            if current_distance < self.min_phase3_distance:
+                reward += 0.05
+                self.min_phase3_distance = current_distance
+            
+        self.prev_distance = current_distance
+
+        print(f"\rPhase: {self.current_phase} | Target Distance: {current_distance:<2}    ", end="", flush=True)
 
         return obs, reward, terminated, truncated, info
 
