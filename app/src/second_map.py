@@ -126,7 +126,6 @@ class Second(MiniGridEnv):
                 self.rewarded_for_key2 = True
                 print(f'\n{Colors.GREEN}Key 2 picked up. +0.5 Reward{Colors.RESET}')
 
-        # ΦΑΣΗ 4 -> 5: Ανοίγει την Πόρτα 2
         if action == self.actions.toggle and front_cell and front_cell.type == 'door' and front_cell.color == COLOR_NAMES[4] and front_cell.is_open:
             if self.current_phase == 4:
                 self.current_phase = 5
