@@ -4,6 +4,13 @@ The goal of this repository is to train an autonomous autonomous agent to solve 
 
 ## Features
 * **Custom MiniGrid Environments:** Three distinct map layouts designed to test specific agent capabilities (hazard avoidance, sequential logic, and spatial generalization).
+  <table>
+  <tr>
+    <td width="33%"><img src="tex/images/first.png" alt="Map 1"></td>
+    <td width="33%"><img src="tex/images/second_v2.png" alt="Map 2"></td>
+    <td width="33%"><img src="tex/images/third_v2.png" alt="Map 3"></td>
+  </tr>
+</table>
 * **Custom Entity Rendering:** Implementation of a `RimWorldEnemy` using procedural geometric primitives.
 * **Optimized Vision System:** A lightweight CNN feature extractor optimized for grid-based environments.
 * **Visualization Tools:** Utilities to generate side-by-side video comparisons of baseline vs. trained agents.
