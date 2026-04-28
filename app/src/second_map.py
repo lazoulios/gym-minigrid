@@ -27,7 +27,7 @@ class Colors:
 class Second(MiniGridEnv):
     def __init__(
         self,
-        size=16,
+        size=8,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
         max_steps=500,
@@ -42,7 +42,7 @@ class Second(MiniGridEnv):
             mission_space=mission_space,
             grid_size=size,
             max_steps=max_steps,
-            agent_view_size=11,
+            agent_view_size=7,
             **kwargs,
         )
 
@@ -63,7 +63,8 @@ class Second(MiniGridEnv):
         self.rewarded_for_key2 = False 
         self.rewarded_for_door2 = False
         
-        self.min_distance = float('inf')
+        self.visited_cells = set()
+        self.visited_cells.add(tuple(self.agent_pos))
         
         return obs, info
 
@@ -81,7 +82,7 @@ class Second(MiniGridEnv):
                 print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
             
         if not terminated and not truncated:
-            reward -= 0.005
+            reward -= 0.005 
 
         front_cell = self.grid.get(*self.front_pos)
         if front_cell is not None:
@@ -105,7 +106,6 @@ class Second(MiniGridEnv):
         if self.carrying and self.carrying.type == 'key' and self.carrying.color == COLOR_NAMES[0]:
             if self.current_phase == 1:
                 self.current_phase = 2 
-                self.min_distance = float('inf')
                 reward += 0.5
                 self.rewarded_for_key1 = True
                 print(f'\n{Colors.GREEN}Key 1 picked up. +0.5 Reward{Colors.RESET}')
@@ -113,7 +113,6 @@ class Second(MiniGridEnv):
         if action == self.actions.toggle and front_cell and front_cell.type == 'door' and front_cell.color == COLOR_NAMES[0] and front_cell.is_open:
             if self.current_phase == 2:
                 self.current_phase = 3
-                self.min_distance = float('inf')
                 reward += 1.0
                 self.rewarded_for_door1 = True
                 print(f'\n{Colors.GREEN}Door 1 opened. +1.0 Reward{Colors.RESET}')
@@ -121,7 +120,6 @@ class Second(MiniGridEnv):
         if self.carrying and self.carrying.type == 'key' and self.carrying.color == COLOR_NAMES[4]:
             if self.current_phase == 3:
                 self.current_phase = 4 
-                self.min_distance = float('inf')
                 reward += 0.5
                 self.rewarded_for_key2 = True
                 print(f'\n{Colors.GREEN}Key 2 picked up. +0.5 Reward{Colors.RESET}')
@@ -129,29 +127,11 @@ class Second(MiniGridEnv):
         if action == self.actions.toggle and front_cell and front_cell.type == 'door' and front_cell.color == COLOR_NAMES[4] and front_cell.is_open:
             if self.current_phase == 4:
                 self.current_phase = 5
-                self.min_distance = float('inf')
                 reward += 1.0
                 self.rewarded_for_door2 = True
                 print(f'\n{Colors.GREEN}Door 2 opened. +1.0 Reward{Colors.RESET}')
 
-        if self.current_phase == 1:
-            target = self.key1_pos
-        elif self.current_phase == 2:
-            target = self.door1_pos
-        elif self.current_phase == 3:
-            target = self.key2_pos
-        elif self.current_phase == 4:
-            target = self.door2_pos
-        else:
-            target = self.goal_pos
-
-        current_distance = abs(self.agent_pos[0] - target[0]) + abs(self.agent_pos[1] - target[1])
-        
-        if current_distance < self.min_distance:
-            reward += 0.1
-            self.min_distance = current_distance
-
-        print(f"\rPhase: {self.current_phase} | Target Distance: {current_distance:<2}    ", end="", flush=True)
+        print(f"\rPhase: {self.current_phase} | Reward: {reward:.3f}    ", end="", flush=True)
 
         return obs, reward, terminated, truncated, info
 
@@ -163,24 +143,18 @@ class Second(MiniGridEnv):
     def _gen_grid(self, width, height):
         self.grid = Grid(width, height)
         self.grid.wall_rect(0, 0, width, height)
-        self.put_obj(Goal(), width - 8, height - 8)
+        self.put_obj(Goal(), 6, 1)
 
-        for i in range(3, height-3):
+        for i in range(1, height):
             self.grid.set(3, i, Wall())
-        for i in range(3, height-3):
-            self.grid.set(12, i, Wall())
-        for i in range(3, height-3):
+        for i in range(3, height):
             self.grid.set(i, 3, Wall())
-        for i in range(3, height-3):
-            self.grid.set(i, 12, Wall())
-        for i in range(3, height-3):
-            self.grid.set(9, i, Wall())
 
-        self.grid.set(12, 7, Door(COLOR_NAMES[0], is_locked=True))
-        self.grid.set(2, 11, Key(COLOR_NAMES[0]))
+        self.grid.set(3, 5, Door(COLOR_NAMES[0], is_locked=True))
+        self.grid.set(1, 6, Key(COLOR_NAMES[0]))
     
-        self.grid.set(3, 7, Door(COLOR_NAMES[4], is_locked=True))
-        self.grid.set(10, 5, Key(COLOR_NAMES[4]))
+        self.grid.set(3, 2, Door(COLOR_NAMES[4], is_locked=True))
+        self.grid.set(6, 5, Key(COLOR_NAMES[4]))
 
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
@@ -189,7 +163,7 @@ class Second(MiniGridEnv):
             self.place_agent()
 
 if __name__ == "__main__":
-    env = Second(size=16,render_mode="human")
+    env = Second(size=8,render_mode="human")
     env = ImgObsWrapper(env)
 
     obs, info = env.reset()

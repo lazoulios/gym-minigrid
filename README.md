@@ -7,17 +7,21 @@ The goal of this repository is to train an autonomous autonomous agent to solve 
 * **Custom Entity Rendering:** Implementation of a `RimWorldEnemy` using procedural geometric primitives.
 * **Optimized Vision System:** A lightweight CNN feature extractor optimized for grid-based environments.
 * **Visualization Tools:** Utilities to generate side-by-side video comparisons of baseline vs. trained agents.
+* **Evaluation Tools:** Utilities to report on metrics abou trained models.
 
 ## Key Results
 Summary of important outcomes from some of the experiments. 
 
-| Experiment | Success Rate | Average Return | Notes |
-| :--- | :---: | :---: | :--- |
-| Map 1 | (fill in) | (fill in) | Mostly Hazard Avoidance |
-| Map 2 | (fill in) | (fill in) | Sequential Logic and Inventory Management |
-| Map 3 | (fill in) | (fill in) | Exploration and Spatial Generalization |
+| Experiment | Timesteps | Success Rate | Average Return | Notes |
+| :--- | :---: | :---: | :---: | :--- |
+| Map 1 | 1.000.000 | (fill in) | (fill in) | Dense Rewards (16x16 Size) |
+| Map 1 | 100.000 | (fill in) | (fill in) | Dense Rewards (16x16 Size) |
+| Map 2 | 1.000.000 | (fill in) | (fill in) | Sequential Logic (8x8 Size) |
+| Map 2 | 100.000 | (fill in) | (fill in) | Sequential Logic (8x8 Size) |
+| Map 3 | 1.000.000 | (fill in) | (fill in) | Sparse Rewards (8x8 Size) |
+| Map 3 | 100.000 | (fill in) | (fill in) | Sparse Rewards (8x8 Size) |
 
-## Setup (virtual environment)
+## Setup / Virtual Enviroment
 
 Clone the repository and set up a virtual environment:
 
@@ -34,9 +38,6 @@ source venv/bin/activate  # Use venv\Scripts\activate.bat on Windows CMD
 pip install -r requirements.txt
 ```
 
-## Requirements
-- Install packages from `requirements.txt`
-
 ## Running training
 Use the provided training script to train agents. Will train an agent on each map independently.
 ```bash
@@ -44,7 +45,8 @@ python app/src/train.py
 ```
 
 ## Evaluation and visualization
-- Use `app/utils/video_overlay.py` to overlay metrics on saved videos.
+- Use `app/utils/video_overlay.py` to record and overlay agents (or random moves bot).
+- Use `app/utils/evaluate_agents.py` to calculate metrics on trained agents.
 - Logs and tensorboard runs are stored under `app/data/runs/`. Use 
 `tensorboard --logdir app/data/runs/` to view
 
@@ -59,7 +61,7 @@ gym-minigrid/
 │   │   ├── third_map.py
 │   │   ├── enemy.py
 │   │   └── train.py
-|   ├── utils/              # small helpers (geometry, overlays)
+|   ├── utils/              # helpers (geometry, video overlays, evaluation script)
 │   └── data/               # models, media, run logs, tensorboard
 ├── tex/                    # latex report code and media
 ├── requirements.txt

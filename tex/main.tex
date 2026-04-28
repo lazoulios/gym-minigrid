@@ -49,11 +49,13 @@ This project explores the application of Deep Reinforcement Learning using the \
 
 \subsection{Architectural Refinements and Evaluation}
 \begin{itemize}
-    \item \textbf{Feature Extraction:} A custom \textbf{Convolutional Neural Network (CNN)} serves as the feature extractor.
-
-    \item \textbf{Learning Dynamics:} The \textbf{PPO} algorithm was selected for its robust clipping mechanism, which prevents catastrophic policy updates during the critical phases of reward discovery.
+    \item \textbf{Feature Extraction:} A custom \textbf{Convolutional Neural Network (CNN)} serves as the feature extractor. A lightweight visual encoder was implemented, consisting of three consecutive 2D convolutional layers (using $2 \times 2$ kernels). These layers progressively expand the feature channels ($16 \rightarrow 32 \rightarrow 64$) before applying a ReLU activation and projecting the spatial state into a 128-dimensional vector through a linear layer.
+   
+    \item \textbf{Learning Dynamics:} The \textbf{Proximal Policy Optimization (PPO)} algorithm was selected for its robust clipping mechanism, which prevents catastrophic policy updates during the critical phases of reward discovery. The custom CNN was integrated into PPO's \texttt{CnnPolicy} actor-critic framework. The network weights were optimized using a learning rate of $3 \times 10^{-4}$.
     
     \item \textbf{Visual Evolution Monitoring:} To assess the agent's progress, \newline \texttt{video\_overlay.py} utility was developed. This script utilizes \textbf{OpenCV} to produce blended video comparisons (\texttt{.mp4}) between a baseline random agent and the trained PPO agents.
+    
+    \item \textbf{Quantitative Performance Evaluation:} The \texttt{evaluate\_agents.py} script runs the trained agents through multiple deterministic episodes to calculate key performance metrics, namely the overall \textit{Success Rate} and \textit{Average Return}. This provides a robust statistical validation of the agent's capabilities across the different environment complexities.
 \end{itemize}
 
 \section{Environment Layouts and Map Design}
@@ -66,25 +68,25 @@ To evaluate the agent's performance across different levels of complexity, three
     \caption{\textbf{First Map:} A dual-room configuration featuring a locked door mechanism, lava hazards, and dynamic enemies.}
     \label{fig:map1}
 \end{figure}
-The \textit{First} map (see Figure \ref{fig:map1}) consists of a two-room layout separated by a locked door. The agent must navigate a simple corridor, avoid lava pits and Enemy entities to reach the goal (indicated by the green square).
+The \textit{First} map (see Figure \ref{fig:map1}) consists of a two-room layout separated by a locked door. The agent must navigate a simple corridor, avoid lava pits and Enemy entities to reach the goal (indicated by the green square). To address size of the $16×16$ state space, a dense reward shaping strategy was implemented, utilizing multi-stage sub-goals to effectively guide the agent's policy convergence.
 
 \subsection{Map 2: Sequential Logic and Inventory Management}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{images/second.png}
+    \includegraphics[width=0.45\textwidth]{images/second_v2.png}
     \caption{\textbf{Second Map:} A multi-stage logic environment requiring key exchange and non-linear pathfinding.}
     \label{fig:map2}
 \end{figure}
-The \textit{Second} map (Figure \ref{fig:map2}) introduces a different design. It requires multi-stage logic where the agent must pick up a blue key, open the corresponding door, and subsequently drop the first key in order to handle a second key/door sequence before finding the goal.
+The \textit{Second} map (Figure \ref{fig:map2}) introduces a different design. It requires multi-stage logic where the agent must pick up a blue key, open the corresponding door, and subsequently drop the first key in order to handle a second key/door sequence before finding the goal. Unlike the \textit{First} map, we follow a sparse reward shaping strategy, given the size of the $8x8$ state space.
 
 \subsection{Map 3: Exploration and Spatial Generalization}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{images/third.png}
+    \includegraphics[width=0.45\textwidth]{images/third_v2.png}
     \caption{\textbf{Third Map:} A dense navigation Maze focused on finding the Shortest Path.}
     \label{fig:map3}
 \end{figure}
-The final \textit{Third} environment (Figure \ref{fig:map3}) is a dense maze focused on pure navigation efficiency. The maze consists of several dead ends but lacks the enemies and inventory management the other two maps required.
+The final \textit{Third} environment (Figure \ref{fig:map3}) is a dense maze focused on pure navigation efficiency. The maze consists of several dead ends but lacks the enemies and inventory management the other two maps required. Similarly to the \textit{Second} Map, we again follow a sparse reward shaping strategy.
 
 \subsection{Custom Entity Rendering}
 An extension to the environment's visual capabilities is the implementation of the \texttt{RimWorldEnemy} class. The render of the enemy was inspired by the style of games like \textit{RimWorld} and \textit{Prison Architect} to add some flavor.
@@ -102,29 +104,35 @@ Similarly to the \texttt{Lava} object in \textit{MiniGrid}, any overlap with the
 
 This addition introduces a higher level of visual and logical complexity; the \textbf{CNN} model is forced to distinguish between different "lethal" entities (e.g., orange static lava vs. red dynamic enemies), preventing the agent from relying on simple color-blob heuristics.
 
-\section{Reward Engineering and Experimental Results}
+\section{Reward Engineering}
 
-\subsection{Dense Reward Shaping (Phase-Based Learning)}
-To accelerate convergence, the global task was decomposed into a \textbf{Finite State Machine} with sub-goals:
+\subsection{Map 1: Dense Reward Shaping}
+To accelerate convergence, the task was decomposed into a \textbf{Finite State Machine} with sub-goals:
 \begin{itemize}
     \item \textbf{Navigation Guidance:} Implemented a "Compass" system using \textit{Manhattan Distance} to provide immediate mathematical feedback during the initial training phases.
-    \item \textbf{Sub-goal Rewards:} Assigned discrete bonuses for critical actions (map-specific):
-        \begin{itemize}
-            \item \textbf{First map:} $+0.5$ for key pickup, $+1.0$ for opening the locked door; small per-step shaping for moving closer to the current phase target ($+0.1$ when distance decreases in Phases 1--2, and $+0.05$ when approaching the goal in Phase 3).
-            \item \textbf{Second map:} Two sequential key/door phases with identical per-phase bonuses ($+0.5$ on key pickup, $+1.0$ on door open) and small front-cell shaping rewards when approaching the correct key/door.
-            \item \textbf{Third map:} Exploration and visitation bonuses ($+0.005$ for new tiles).
-        \end{itemize}
+    \item \textbf{Sub-goal Rewards:} Assigned discrete bonuses for critical actions (map-specific), $+0.5$ for key pickup, $+1.0$ for opening the locked door; small per-step shaping for moving closer to the current phase target ($+0.1$ when distance decreases in Phases 1--2, and $+0.05$ when approaching the goal in Phase 3).
     \item \textbf{Time Penalty:} A constant step penalty of $-0.005$ is applied to incentivize shorter solutions.
-    \item \textbf{Failure Penalties:} Collisions with lethal tiles or enemies, or catastrophic drop of inventory incur on larger negative rewards (map-dependent) and typically terminate the episode.
+    \item \textbf{Failure Penalties:} Collisions with lethal tiles or enemies incur on larger negative rewards and typically terminate the episode.
 \end{itemize}
 
+\subsection{Map 2: Sequential Logic and Event-Driven Rewards}The reward sructure for the puzzle relies strictly on discrete phase progression and inventory management:
+\begin{itemize}
+    \item \textbf{Event-Based Sub-goals:}  Assigned discrete bonuses for critical actions (map-specific), $+0.5$ for key pickup, $+1.0$ for opening the locked door, same as \textit{Map 1};
+    \item \textbf{Inventory Penalty:} To enforce item retention, a strict penalty of -2.0 is applied if the agent drops a required key, which also triggers immediate episode termination.
+\end{itemize}
+
+\subsection{Map 3: Pure Sparse Rewards}
+In this environment, heuristic guidance and sub-goals are completely eliminated to evaluate the agent's spatial generalization and exploratory capabilities:
+\begin{itemize}
+    \item \textbf{Terminal Reward:} The agent receives positive reinforcement solely upon successfully completing the entire mission and reaching the final goal.
+    \item \textbf{Time Penalty:} A constant step penalty of -0.05 serves as the only environmental feedback during navigation. This strict sparsity forces the algorithm to rely entirely on intrinsic exploration (entropy) to discover the terminal state without any intermediate breadcrumbs.
+\end{itemize}
 \section{Results and Evolution}
 The codebase utilizes \textit{TensorBoard} logging for real-time monitoring of \texttt{ep\_rew\_mean} and \texttt{ep\_len\_mean}. TensorBoard runs for the trainings are under \texttt{app/data/runs/}.
 
 \subsection{First Map}
 \subsection{Second Map}
 \subsection{Third Map}
-
 
 \section{Code Implementation and Repository}
 \begin{itemize}

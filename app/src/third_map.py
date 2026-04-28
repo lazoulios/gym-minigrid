@@ -14,14 +14,22 @@ from minigrid.core.grid import Grid
 from minigrid.core.constants import COLOR_NAMES
 from minigrid.core.world_object import Goal, Wall, Lava, Door, Key
 from minigrid.wrappers import ImgObsWrapper
+from minigrid.core.constants import COLOR_NAMES
 from minigrid.core.mission import MissionSpace
 import time
 
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    CYAN = '\033[96m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
 
 class Third(MiniGridEnv):
     def __init__(
         self,
-        size=16,
+        size=8,
         agent_start_pos=(1, 1),
         agent_start_dir=0,
         max_steps=500, 
@@ -36,7 +44,7 @@ class Third(MiniGridEnv):
             mission_space=mission_space,
             grid_size=size,
             max_steps=max_steps, 
-            agent_view_size=11,
+            agent_view_size=7,
             **kwargs,
         )
 
@@ -55,25 +63,14 @@ class Third(MiniGridEnv):
 
         current_cell = self.grid.get(*self.agent_pos)
         if current_cell is not None:
-            if current_cell.type == 'lava':
-                reward -= 10.0  
-                terminated = True 
-                print('Agent died. -10.0 Reward')
+            if current_cell.type == 'goal':
+                reward += 5.0  
+                terminated = True
+                print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
+            
 
         if not terminated and not truncated:
             reward -= 0.005
-
-        if self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_key:
-            reward += 0.5
-            self.rewarded_for_key = True
-            print('Key picked up. +0.5 Reward')
-
-        if action == self.actions.toggle:
-            front_cell = self.grid.get(*self.front_pos)
-            if front_cell is not None and front_cell.type == 'door' and front_cell.is_open and not self.rewarded_for_door:
-                reward += 0.5
-                self.rewarded_for_door = True
-                print('Door opened. +0.5 Reward')
 
         current_pos_tuple = tuple(self.agent_pos)
         if current_pos_tuple not in self.visited_cells:
@@ -90,38 +87,23 @@ class Third(MiniGridEnv):
         self.grid = Grid(width, height)
         self.grid.wall_rect(0, 0, width, height)
 
-        for x in range(1, width - 1):
-            if x not in (2, 4, 7, 9, 12,14):
-                self.grid.set(x, 2, Wall())
-            if x not in (1, 3, 6, 8, 11,14):
-                self.grid.set(x, 5, Wall())
-            if x not in (2, 5, 7, 10, 13):
-                self.grid.set(x, 8, Wall())
-            if x not in (1, 4, 6, 9, 12):
-                self.grid.set(x, 11, Wall())
-        self.grid.set(9, 7, Wall())
-        self.grid.set(9, 4, Wall())
-        self.grid.set(2, 8, Wall())
-        self.grid.set(11, 13, Wall())
-        self.grid.set(11, 12, Wall())
-        self.grid.set(9, 11, Wall())
-        self.grid.set(6, 5, Wall())
-        self.grid.set(13, 8, Wall())
+        self.put_obj(Wall(), 2, 1)
+        self.put_obj(Wall(), 2, 2)
+        self.put_obj(Wall(), 2, 4)
+        self.put_obj(Wall(), 2, 5)
+        self.put_obj(Wall(), 1, 5)
+        self.put_obj(Wall(), 1, 4)
+        self.put_obj(Wall(), 4, 2)
+        self.put_obj(Wall(), 4, 3)
+        self.put_obj(Wall(), 4, 4)
+        self.put_obj(Wall(), 4, 6)
+        self.put_obj(Wall(), 5, 2)
+        self.put_obj(Wall(), 5, 3)
+        self.put_obj(Wall(), 5, 6)
+        self.put_obj(Wall(), 6, 6)
+        self.put_obj(Wall(), 6, 5)
 
-        for y in range(1, height - 1):
-            if y not in (3, 6, 9):
-                self.grid.set(3, y, Wall())
-            if y not in (2, 5, 10):
-                self.grid.set(6, y, Wall())
-            if y not in (1, 4, 7, 11):
-                self.grid.set(9, y, Wall())
-            if y not in (2,10,12, 7,8):
-                self.grid.set(13, y, Wall())
-
-        self.put_obj(Goal(), width - 2, height - 2)
-
-        self.grid.set(7, 2, Door(COLOR_NAMES[2], is_locked=True))
-        self.grid.set(1, 13, Key(COLOR_NAMES[2]))
+        self.put_obj(Goal(), 1, 6)
 
         if self.agent_start_pos is not None:
             self.agent_pos = self.agent_start_pos
@@ -131,7 +113,7 @@ class Third(MiniGridEnv):
 
 
 if __name__ == "__main__":
-    env = Third(size=16, render_mode="human")
+    env = Third(size=8, render_mode="human")
     env = ImgObsWrapper(env)
 
     obs, info = env.reset()
