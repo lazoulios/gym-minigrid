@@ -76,9 +76,9 @@ class First(MiniGridEnv):
         current_cell = self.grid.get(*self.agent_pos)
         if current_cell is not None:
             if current_cell.type == 'lava' or isinstance(current_cell, RimWorldEnemy):
-                reward -= 5.0  
+                reward -= 0.5  
                 terminated = True 
-                print(f'\n{Colors.RED}Agent died. -5.0 Reward{Colors.RESET}')
+                print(f'\n{Colors.RED}Agent died. -0.5 Reward{Colors.RESET}')
             elif current_cell.type == 'goal':
                 reward += 5.0  
                 terminated = True
