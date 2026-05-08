@@ -1,6 +1,6 @@
 # gym-minigrid
 
-The goal of this repository is to train an autonomous autonomous agent to solve multi-stage logic puzzles within the Gym MiniGrid framework using Deep Reinforcement Learning. The project utilizes the Proximal Policy Optimization (PPO) algorithm and explores the critical impact of reward shaping and custom Convolutional Neural Network (CNN) architectures in helping the agent overcome local minima,
+The goal of this repository is to train an autonomous agent to solve multi-stage logic puzzles within the Gym MiniGrid framework using Deep Reinforcement Learning. The project utilizes the Proximal Policy Optimization (PPO) algorithm and explores the critical impact of reward shaping and custom Convolutional Neural Network (CNN) architectures in helping the agent overcome local minima,
 
 ## Features
 * **Custom MiniGrid Environments:** Three distinct map layouts designed to test specific agent capabilities (hazard avoidance, sequential logic, and spatial generalization).
