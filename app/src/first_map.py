@@ -69,6 +69,7 @@ class First(MiniGridEnv):
 
     def step(self, action):
         obs, reward, terminated, truncated, info = super().step(action)
+        info['is_success'] = False
 
         if action == self.actions.done:
             terminated = False 
@@ -82,6 +83,7 @@ class First(MiniGridEnv):
             elif current_cell.type == 'goal':
                 reward += 5.0  
                 terminated = True
+                info['is_success'] = True
                 print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
 
         if action == self.actions.drop and self.carrying is not None and self.carrying.type == 'key' and not self.rewarded_for_door and self.current_phase == 2:

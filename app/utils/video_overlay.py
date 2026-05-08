@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
         print(f"\nLoading {map_name}...")
 
-        env = EnvClass(size=16, render_mode="rgb_array", max_steps=500)
+        env = EnvClass(render_mode="rgb_array", max_steps=500)
         env = ImgObsWrapper(env)
 
         test_seed = 42 
@@ -62,7 +62,8 @@ if __name__ == "__main__":
         frames_bad = collect_frames(None, env, test_seed)
 
         print("\nRecording agent moves...")
-        model_path = f"app/data/model/ppo_agent_100k_first_map"
+        model_path = f"app/data/model/ppo_agent_500k_{map_name}" 
+        frames_good = collect_frames(model_path, env, test_seed)
         frames_good = collect_frames(model_path, env, test_seed)
 
         env.close()
@@ -71,7 +72,7 @@ if __name__ == "__main__":
         
         height, width, layers = frames_good[0].shape
 
-        save_path = f"app/data/media/evolution_overlay_{map_name}.mp4"
+        save_path = f"app/data/media/500k_evolution_overlay_{map_name}.mp4"
         video_name = 'evolution_overlay.mp4'
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         video = cv2.VideoWriter(save_path, fourcc, 10, (width, height))

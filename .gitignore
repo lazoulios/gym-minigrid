@@ -4,3 +4,4 @@ __pycache__/
 app/data/model
 app/data/runs
 *.mp4
+app/data/

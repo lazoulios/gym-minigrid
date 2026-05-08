@@ -61,9 +61,11 @@ class Third(MiniGridEnv):
     def step(self, action):
         obs, reward, terminated, truncated, info = super().step(action)
 
+        info['is_success'] = False
         current_cell = self.grid.get(*self.agent_pos)
         if current_cell is not None:
             if current_cell.type == 'goal':
+                info['is_success'] = True
                 reward += 5.0  
                 terminated = True
                 print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')

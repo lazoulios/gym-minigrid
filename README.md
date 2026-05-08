@@ -7,9 +7,15 @@ The goal of this repository is to train an autonomous autonomous agent to solve 
 
 <table>
   <tr>
-    <td width="33%"><img src="tex/images/first.png" alt="Map 1"></td>
-    <td width="33%"><img src="tex/images/second_v2.png" alt="Map 2"></td>
-    <td width="33%"><img src="tex/images/third_v2.png" alt="Map 3"></td>
+    <td width="33%" align="center">
+    <b>Map 1</b>
+    <img src="tex/images/first.png" alt="Map 1"></td>
+    <td width="33%" align="center">
+    <b>Map 2</b>
+    <img src="tex/images/second_v2.png" alt="Map 2"></td>
+    <td width="33%" align="center">
+    <b>Map 3</b>
+    <img src="tex/images/third_v2.png" alt="Map 3"></td>
   </tr>
 </table>
 
@@ -21,14 +27,55 @@ The goal of this repository is to train an autonomous autonomous agent to solve 
 ## Key Results
 Summary of important outcomes from some of the experiments. 
 
-| Experiment | Timesteps | Success Rate | Average Return | Notes |
-| :--- | :---: | :---: | :---: | :--- |
-| Map 1 | 1.000.000 | (fill in) | (fill in) | Dense Rewards (16x16 Size) |
-| Map 1 | 100.000 | (fill in) | (fill in) | Dense Rewards (16x16 Size) |
-| Map 2 | 1.000.000 | (fill in) | (fill in) | Sequential Logic (8x8 Size) |
-| Map 2 | 100.000 | (fill in) | (fill in) | Sequential Logic (8x8 Size) |
-| Map 3 | 1.000.000 | (fill in) | (fill in) | Sparse Rewards (8x8 Size) |
-| Map 3 | 100.000 | (fill in) | (fill in) | Sparse Rewards (8x8 Size) |
+| Experiment | Timesteps | Success Rate | Average Return | Notes                                           |
+| :--------- | :-------: | :----------: | :------------: | :---------------------------------------------- |
+| Map 1      |  100.000  |    93.8%     |     9.585      | <sub>Minor stochastic looping.</sub>            |
+|            |  300.000  |    100.0%    |     10.132     | <sub>Perfect convergence.</sub>                 |
+|            |  500.000  |    98.4%     |     9.762      | <sub>Slight exploratory variance.</sub>         |
+| Map 2      |  100.000  |     0.0%     |     0.911      | <sub>Trapped in local minimum.</sub>            |
+|            |  300.000  |     0.0%     |     -0.041     | <sub>Severe local minimum trap.</sub>           |
+|            |  500.000  |    86.8%     |     7.343      | <sub>Overcame local minima and converged.</sub> |
+| Map 3      |  100.000  |    100.0%    |     5.896      | <sub>Rapid convergence.                         |
+|            |  300.000  |    100.0%    |     5.925      | <sub>Rapid convergence.</sub>                   |
+|            |  500.000  |     0.0%     |     -0.995     | <sub>Complete catastrophic forgetting.</sub>    |
+
+**Note on Evaluation:** To contextualize the *Average Return*, maximum return was calculated assuming an optimal trajectory (minimizing time penalties and maximizing available dense/event rewards). The theoretical bounds are approximately **10.35** for Map 1, **8.816** for Map 2, and **5.962** for Map 3.
+
+### Training metrics for Map 1:
+<table>
+  <tr>
+  <td width="50%" align="center">
+    <b>Average Episodic Return</b>
+    <img src="tex/images/first_map_convergence.png" alt="Map 1 Return"></td>
+  <td width="50%" align="center">
+    <b>Average Episode Length</b>
+    <img src="tex/images/first_map_len.png" alt="Map 1 Length"></td>
+  </tr>
+</table>
+
+### Training metrics for Map 2:
+<table>
+  <tr>
+  <td width="50%" align="center">
+    <b>Average Episodic Return</b>
+    <img src="tex/images/second_map_convergence.png" alt="Map 2 Return"></td>
+  <td width="50%" align="center">
+    <b>Average Episode Length</b>
+    <img src="tex/images/second_map_len.png" alt="Map 2 Length"></td>
+  </tr>
+</table>
+
+### Training metrics for Map 3:
+<table>
+  <tr>
+  <td width="50%" align="center">
+    <b>Average Episodic Return</b>
+    <img src="tex/images/third_map_convergence.png" alt="Map 3 Return"></td>
+  <td width="50%" align="center">
+    <b>Average Episode Length</b>
+    <img src="tex/images/third_map_len.png" alt="Map 3 Length"></td>
+  </tr>
+</table>
 
 ## Setup / Virtual Enviroment
 

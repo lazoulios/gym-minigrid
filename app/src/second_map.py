@@ -70,7 +70,7 @@ class Second(MiniGridEnv):
 
     def step(self, action):
         obs, reward, terminated, truncated, info = super().step(action)
-
+        info['is_success'] = False
         if action == self.actions.done:
             terminated = False 
 
@@ -78,6 +78,7 @@ class Second(MiniGridEnv):
         if current_cell is not None:
             if current_cell.type == 'goal':
                 reward += 5.0  
+                info['is_success'] = True
                 terminated = True
                 print(f'\n{Colors.YELLOW}Agent reached Goal. +5.0 Reward{Colors.RESET}')
             

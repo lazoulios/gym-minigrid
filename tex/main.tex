@@ -5,6 +5,7 @@
 \usepackage{hyperref}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage{float}
@@ -16,8 +17,8 @@
 \begin{document}
 
 \begin{titlepage}
-    \centering 
-    \vspace{2.5cm} 
+    \centering
+    \vspace{2.5cm}
     {\Large \textbf{Reinforcement Learning on Gym's MiniGrid Interface}}\\[0.1cm]
     \vspace{1cm}
     \vspace{2cm}
@@ -28,12 +29,12 @@
     {\Large Aristotle University of Thessaloniki}
     \vfill
     {\Large May 2026}
-    \vspace*{1cm} 
+    \vspace*{1cm}
 \end{titlepage}
 
 \author{Georgios Lazaridis}
 
-\pagenumbering{arabic} 
+\pagenumbering{arabic}
 \centering
 \section{Introduction and Implementation}
 This project explores the application of Deep Reinforcement Learning using the \textbf{Proximal Policy Optimization (PPO)} algorithm within the \textit{Gym MiniGrid} framework. The core objective was to develop an agent capable of navigating complex, logic-driven environments through custom reward engineering and optimized neural architectures.
@@ -41,21 +42,21 @@ This project explores the application of Deep Reinforcement Learning using the \
 \subsection{Task Definition and Environment Components}
 \begin{itemize}
     \item \textbf{Navigation Logic:} The agent must solve multi-stage puzzles requiring inventory management (key collection) and environment manipulation (unlocking doors). Three custom map classes (\texttt{First}, \texttt{Second}, and \texttt{Third}) were developed for this purpose.
-    
+
     \item \textbf{Custom Entities:} To enhance environmental complexity, the \newline \texttt{RimWorldEnemy} class was implemented.
-    
+
     \item \textbf{Observation Space:} Observations consist of a partially observable $11\times11$ grid. This spatial data is processed as an image-like tensor, allowing the agent to perceive both static terrain and dynamic threats.
 \end{itemize}
 
 \subsection{Architectural Refinements and Evaluation}
 \begin{itemize}
     \item \textbf{Feature Extraction:} A custom \textbf{Convolutional Neural Network (CNN)} serves as the feature extractor. A lightweight visual encoder was implemented, consisting of three consecutive 2D convolutional layers (using $2 \times 2$ kernels). These layers progressively expand the feature channels ($16 \rightarrow 32 \rightarrow 64$) before applying a ReLU activation and projecting the spatial state into a 128-dimensional vector through a linear layer.
-   
+
     \item \textbf{Learning Dynamics:} The \textbf{Proximal Policy Optimization (PPO)} algorithm was selected for its robust clipping mechanism, which prevents catastrophic policy updates during the critical phases of reward discovery. The custom CNN was integrated into PPO's \texttt{CnnPolicy} actor-critic framework. The network weights were optimized using a learning rate of $3 \times 10^{-4}$.
-    
-    \item \textbf{Visual Evolution Monitoring:} To assess the agent's progress, \newline \texttt{video\_overlay.py} utility was developed. This script utilizes \textbf{OpenCV} to produce blended video comparisons (\texttt{.mp4}) between a baseline random agent and the trained PPO agents.
-    
-    \item \textbf{Quantitative Performance Evaluation:} The \texttt{evaluate\_agents.py} script runs the trained agents through multiple deterministic episodes to calculate key performance metrics, namely the overall \textit{Success Rate} and \textit{Average Return}. This provides a robust statistical validation of the agent's capabilities across the different environment complexities.
+
+    \item \textbf{Visual Evolution Monitoring:} To assess the agent's progress, \newline \texttt{video\_overlay.py} and \texttt{plot\_run\_data.py} utility was developed. \newline \texttt{video\_overlay.py} utilizes \textbf{OpenCV} to produce blended video comparisons (\texttt{.mp4}) between a baseline random agent and the trained PPO agents, and \texttt{plot\_run\_data.py} visualizes information regarding the \textit{Average Return} and \textit{Episode Length}
+
+    \item \textbf{Performance Evaluation:} The \texttt{evaluate\_agents.py} script runs the trained agents through multiple deterministic episodes to calculate key performance metrics, namely the overall \textit{Success Rate} and \textit{Average Return}. This provides a robust statistical validation of the agent's capabilities across the different environment complexities.
 \end{itemize}
 
 \section{Environment Layouts and Map Design}
@@ -93,14 +94,14 @@ An extension to the environment's visual capabilities is the implementation of t
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.2\textwidth]{images/enemy_render.png} 
+    \includegraphics[width=0.2\textwidth]{images/enemy_render.png}
     \caption{\textbf{Custom Enemy Sprite}}
     \label{fig:enemy}
 \end{figure}
 
 The rendering process (see \texttt{enemy.py}) utilizes \textbf{fill\_coords} to layer the body, clothing, and facial features in a specific Z-order, and a helper utility (\textbf{point\_in\_ellipse.py}) to define the boundaries for the color filling.
 
-Similarly to the \texttt{Lava} object in \textit{MiniGrid}, any overlap with the \texttt{RimWorldEnemy} class triggers an immediate episode termination and a significant reward penalty. 
+Similarly to the \texttt{Lava} object in \textit{MiniGrid}, any overlap with the \texttt{RimWorldEnemy} class triggers an immediate episode termination and a significant reward penalty.
 
 This addition introduces a higher level of visual and logical complexity; the \textbf{CNN} model is forced to distinguish between different "lethal" entities (e.g., orange static lava vs. red dynamic enemies), preventing the agent from relying on simple color-blob heuristics.
 
@@ -127,12 +128,127 @@ In this environment, heuristic guidance and sub-goals are completely eliminated 
     \item \textbf{Terminal Reward:} The agent receives positive reinforcement solely upon successfully completing the entire mission and reaching the final goal.
     \item \textbf{Time Penalty:} A constant step penalty of -0.05 serves as the only environmental feedback during navigation. This strict sparsity forces the algorithm to rely entirely on intrinsic exploration (entropy) to discover the terminal state without any intermediate breadcrumbs.
 \end{itemize}
-\section{Results and Evolution}
-The codebase utilizes \textit{TensorBoard} logging for real-time monitoring of \texttt{ep\_rew\_mean} and \texttt{ep\_len\_mean}. TensorBoard runs for the trainings are under \texttt{app/data/runs/}.
+\section{Results and Evaluation}
+To assess the convergence the trained PPO agents, the codebase utilizes \textit{TensorBoard} logging for real-time monitoring of \texttt{ep\_rew\_mean} and \texttt{ep\_len\_mean} (stored under \texttt{app/data/runs/}). Post-training evaluation was conducted using a stochastic methodology: each model was executed for 500 independent episodes with a strictly enforced truncation limit of 200 steps (\texttt{max\_steps=200}).
 
-\subsection{First Map}
-\subsection{Second Map}
-\subsection{Third Map}
+To contextualize the \textit{Average Return},
+a Theoretical Maximum Return was calculated for each map,
+accounting for custom event rewards, distance shaping heuristics,
+the step-based time penalty ($-0.005$), and the native MiniGrid completion bonus.
+The empirical results across 100k, 300k, and 500k timesteps are summarized in Table \ref{tab:results}.
+
+\begin{table}[H]
+    \centering
+    \caption{Evaluation Results across 500 Stochastic Episodes}
+    \label{tab:results}
+    \begin{tabular}{llcc}
+        \hline
+        \textbf{Environment} & \textbf{Timesteps} & \textbf{Success Rate (\%)} & \textbf{Average Return} \\ \hline
+        {Map 1 (First)}      & 100k               & 93.8\%                     & 9.585                   \\
+                             & 300k               & \textbf{100.0\%}           & \textbf{10.132}         \\
+                             & 500k               & 98.4\%                     & 9.762                   \\ \hline
+        {Map 2 (Second)}     & 100k               & 0.0\%                      & 0.911                   \\
+                             & 300k               & 0.0\%                      & -0.041                  \\
+                             & 500k               & \textbf{86.8\%}            & \textbf{7.343}          \\ \hline
+        {Map 3 (Third)}      & 100k               & 100.0\%                    & 5.896                   \\
+                             & 300k               & \textbf{100.0\%}           & \textbf{5.925}          \\
+                             & 500k               & 0.0\%                      & -0.995                  \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Map 1: Dense Reward Convergence}
+The theoretical maximum return for Map 1 is approximately $10.35$.
+The evaluation highlights rapid convergence due to the dense reward shaping.
+The model trained for 300k timesteps achieved a flawless $100\%$ success rate
+with an average return of $10.132$. This indicates near-perfect optimal pathing.
+The slight variance observed at 100k and 500k timesteps is attributed to
+stochastic exploratory noise.
+
+Furthermore, after visual inspection of Figure \ref{fig:map1_metrics}
+we notice that at approximately 125k timesteps, the 500k agent experienced
+a severe policy collapse (catastrophic forgetting),
+with the return plummeting from near-optimal levels to negative values.
+However, unlike the permanent degradation observed in purely sparse environments,
+the agent successfully recovered its optimal policy by timestep 250k.
+The distance-based rewards provided the necessary gradient signals
+to guide the model out of the collapsed state and stabilize its navigation strategy.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/first_map_convergence.png}
+        \caption{Average Episodic Return}
+        \label{fig:map1_reward}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/first_map_len.png}
+        \caption{Average Episode Length}
+        \label{fig:map1_length}
+    \end{subfigure}
+    \caption{Training metrics for Map 1.}
+    \label{fig:map1_metrics}
+\end{figure}
+
+\subsection{Map 2: Sequential Logic and Local Minima}
+Map 2, demonstrated the non-linear progression of deep reinforcement learning.
+The theoretical maximum for this environment is $8.816$.
+The 100k and 300k models completely failed to reach the terminal state ($0\%$ success rate),
+acquiring only the initial key before becoming trapped in a local minimum and timing out.
+Extended training allowed the 500k model to escape this local minimum,
+successfully executing the full sequence to achieve an $86.8\%$ success rate
+and an average return of $7.343$.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/second_map_convergence.png}
+        \caption{Average Episodic Return}
+        \label{fig:map2_reward}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/second_map_len.png}
+        \caption{Average Episode Length}
+        \label{fig:map2_length}
+    \end{subfigure}
+    \caption{Training metrics for Map 2.}
+    \label{fig:map2_metrics}
+\end{figure}
+
+\subsection{Map 3: Spatial Exploitation and Catastrophic Forgetting}
+The evaluation of Map 3 yielded interesting insights regarding agent behavior.
+The theoretical maximum return for navigating the intended labyrinth was calculated at approximately $5.962$.
+The 300k agent achieved $100\%$ success rate and an average return of $5.925$ over 500 episodes.
+
+Interestingly, pushing the training to 500k timesteps negatively impacted the model, as seen in as seen in Figure \ref{fig:map3_metrics},
+leading to what appears to be catastrophic forgetting, which was also observed in the first map.
+However, while the 500k agent in the first map successfully recovered due to its dense rewards,
+the Map 3 agent's performance permanently fell to a $0\%$ success rate and a $-0.995$ average return
+and with a lack of a dense reward policy was unable to re-converge
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/third_map_convergence.png}
+        \caption{Average Episodic Return}
+        \label{fig:map3_reward}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/third_map_len.png}
+        \caption{Average Episode Length}
+        \label{fig:map3_length}
+    \end{subfigure}
+    \caption{Training metrics for Map 3.}
+    \label{fig:map3_metrics}
+\end{figure}
 
 \section{Code Implementation and Repository}
 \begin{itemize}
